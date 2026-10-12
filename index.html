@@ -1,0 +1,961 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#101216">
+<title>Målvaktsstatistik</title>
+
+<style>
+    * { box-sizing: border-box; }
+    [hidden] { display: none !important; }
+
+    html { -webkit-text-size-adjust: 100%; }
+
+    body {
+        margin: 0;
+        background: #101216;
+        color: #e9ecf0;
+        font-family: Roboto, system-ui, -apple-system, "Segoe UI", sans-serif;
+        -webkit-tap-highlight-color: transparent;
+    }
+
+    .app {
+        max-width: 440px;
+        margin: 0 auto;
+        padding: 16px 14px 32px;
+        display: grid;
+        gap: 14px;
+    }
+
+    /* ---------- Matchinfo ---------- */
+    .setup { display: grid; gap: 10px; }
+    .row   { display: grid; grid-template-columns: 1fr 48px; gap: 10px; }
+
+    .info-btn {
+        min-height: 48px;
+        border-radius: 50%;
+        border: 1px solid #333a45;
+        background: #1b1f26;
+        color: #e9ecf0;
+        font-size: 20px;
+        font-weight: 700;
+        font-style: italic;
+        font-family: Georgia, serif;
+        cursor: pointer;
+        touch-action: manipulation;
+    }
+    .info-btn[aria-expanded="true"] { background: #e9ecf0; color: #101216; }
+
+    .info {
+        background: #1b1f26;
+        border: 1px solid #333a45;
+        border-radius: 14px;
+        padding: 14px 16px;
+        font-size: 14px;
+        line-height: 1.45;
+        color: #c9ced6;
+    }
+    .info dl { margin: 0; display: grid; gap: 10px; }
+    .info dt { font-weight: 700; color: #e9ecf0; }
+    .info dd { margin: 2px 0 0; }
+
+    input {
+        font: inherit;
+        font-size: 16px;
+        color: #e9ecf0;
+        background: #1b1f26;
+        border: 1px solid #333a45;
+        border-radius: 10px;
+        padding: 12px;
+        width: 100%;
+        min-width: 0;
+        min-height: 48px;
+        color-scheme: dark;
+    }
+    input::placeholder { color: #7d8795; }
+
+    .periods {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr) 1.5fr;
+        gap: 8px;
+    }
+
+    .chip {
+        min-height: 48px;
+        border-radius: 10px;
+        border: 1px solid #333a45;
+        background: #1b1f26;
+        color: #9aa3b0;
+        font: inherit;
+        font-size: 16px;
+        font-weight: 700;
+        cursor: pointer;
+        touch-action: manipulation;
+    }
+    .chip[aria-pressed="true"] {
+        background: #d4ebd9;
+        border-color: #d4ebd9;
+        color: #14171c;
+    }
+
+    .minutes { position: relative; }
+    .minutes input { padding-right: 44px; }
+    .minutes span {
+        position: absolute;
+        right: 12px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #7d8795;
+        font-size: 14px;
+        pointer-events: none;
+    }
+
+    /* ---------- Kort (det som sparas som bild) ---------- */
+    .card {
+        background: #f3f4f6;
+        color: #14171c;
+        border-radius: 18px;
+        padding: 18px 14px 16px;
+    }
+    .card.flat { border-radius: 0; }
+    .details.flat { border-top: 2px solid #e1e4e9; }
+
+    .head {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 10px;
+    }
+    .head-left { flex: 1; min-width: 0; }
+    .who { font-size: 20px; font-weight: 700; }
+    .who .sub { font-size: 15px; font-weight: 500; color: #5d6572; }
+    .periods-text { font-size: 15px; color: #5d6572; margin-top: 2px; }
+    .date {
+        flex-shrink: 0;
+        font-size: 14px;
+        color: #5d6572;
+        margin-top: 5px;
+        white-space: nowrap;
+    }
+
+    .grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 9px;
+        margin-top: 12px;
+    }
+    .grid.cols2 { grid-template-columns: 1fr 1fr; margin-top: 8px; }
+
+    .tile {
+        background: #ffffff;
+        border-radius: 14px;
+        padding: 12px 4px;
+        text-align: center;
+    }
+    .tile.good { background: #d4ebd9; }
+
+    .t-label {
+        font-size: 11px;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        color: #5d6572;
+    }
+    .tile.two .t-label {
+        min-height: 2.5em;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .t-value {
+        margin-top: 4px;
+        font-size: 28px;
+        font-weight: 700;
+        line-height: 1.2;
+        display: flex;
+        justify-content: center;
+        align-items: baseline;
+        flex-wrap: wrap;
+        gap: 0 4px;
+    }
+    .t-value small { font-size: 14px; font-weight: 500; color: #5d6572; }
+
+    /* Målinformation */
+    .sec-label {
+        margin: 14px 0 0;
+        font-size: 11px;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        color: #5d6572;
+    }
+    .empty { margin: 10px 0 0; font-size: 15px; color: #5d6572; }
+
+    .glist {
+        list-style: none;
+        margin: 8px 0 0;
+        padding: 0;
+        display: grid;
+        gap: 6px;
+    }
+    .glist li {
+        background: #ffffff;
+        border-radius: 12px;
+        padding: 10px 12px;
+        font-size: 15px;
+        display: flex;
+        gap: 10px;
+    }
+    .glist b { min-width: 1.6em; }
+
+    /* ---------- Knappar under matchen ---------- */
+    .pad { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+    .pad-btn {
+        min-height: 88px;
+        border: 0;
+        border-radius: 16px;
+        padding: 12px 14px;
+        text-align: left;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        gap: 2px;
+        font: inherit;
+        cursor: pointer;
+        touch-action: manipulation;
+        user-select: none;
+        -webkit-user-select: none;
+        transition: transform 0.08s;
+    }
+    .pad-btn:active { transform: scale(0.97); }
+
+    .pad-top {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 8px;
+    }
+    .pad-title { font-size: 19px; font-weight: 700; }
+    .pad-count { font-size: 22px; font-weight: 700; line-height: 1.1; }
+    .pad-sub   { font-size: 13px; opacity: 0.85; }
+
+    .keep    { background: #2fa863; color: #04200f; }
+    .rebound { background: #f2b632; color: #261b00; }
+    .goal    { background: #cf3f38; color: #ffffff; }
+    .fri {
+        background: #1b1f26;
+        color: #e9ecf0;
+        box-shadow: inset 0 0 0 2px #4a5361;
+    }
+    .fri[aria-pressed="true"] {
+        background: #ffffff;
+        color: #14171c;
+        box-shadow: inset 0 0 0 2px #ffffff;
+    }
+
+    .tools { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+    .sec {
+        min-height: 48px;
+        border-radius: 12px;
+        border: 1px solid #333a45;
+        background: transparent;
+        color: #e9ecf0;
+        font: inherit;
+        font-size: 16px;
+        font-weight: 600;
+        cursor: pointer;
+        touch-action: manipulation;
+    }
+    .sec:disabled { opacity: 0.4; cursor: default; }
+
+    .primary {
+        min-height: 58px;
+        border-radius: 14px;
+        border: 0;
+        background: #e9ecf0;
+        color: #101216;
+        font: inherit;
+        font-size: 18px;
+        font-weight: 700;
+        cursor: pointer;
+        touch-action: manipulation;
+    }
+    .primary:disabled { opacity: 0.4; cursor: default; }
+
+    .msg {
+        min-height: 1.2em;
+        margin: 0;
+        text-align: center;
+        color: #9aa3b0;
+        font-size: 14px;
+    }
+
+    /* ---------- Målruta (bottenark) ---------- */
+    dialog {
+        border: 0;
+        padding: 0;
+        background: transparent;
+        color: inherit;
+        width: 100%;
+        max-width: none;
+        margin: auto 0 0 0;
+    }
+    dialog::backdrop { background: rgba(0, 0, 0, 0.65); }
+
+    .sheet {
+        max-width: 440px;
+        margin: 0 auto;
+        background: #1b1f26;
+        border-radius: 20px 20px 0 0;
+        padding: 18px 14px 20px;
+        display: grid;
+        gap: 12px;
+    }
+    .sheet h2 { margin: 0; font-size: 20px; }
+    .sheet h3 {
+        margin: 0;
+        font-size: 12px;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        color: #9aa3b0;
+        font-weight: 500;
+    }
+    .sheet .hint { margin: -6px 0 0; font-size: 13px; color: #9aa3b0; }
+
+    .goal-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+        padding: 8px 8px 0;
+        border: 3px solid #e9ecf0;
+        border-bottom: 0;
+        border-radius: 10px 10px 0 0;
+    }
+    .how-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+
+    .opt {
+        min-height: 60px;
+        border-radius: 12px;
+        border: 2px solid #333a45;
+        background: #101216;
+        color: #e9ecf0;
+        font: inherit;
+        font-size: 16px;
+        font-weight: 600;
+        cursor: pointer;
+        touch-action: manipulation;
+    }
+    .goal-grid .opt { margin-bottom: 8px; }
+    .opt[aria-pressed="true"] {
+        background: #cf3f38;
+        border-color: #cf3f38;
+        color: #ffffff;
+    }
+
+    .sheet-actions { display: grid; grid-template-columns: 1fr 1.4fr; gap: 10px; }
+
+    .link {
+        min-height: 44px;
+        border: 0;
+        background: none;
+        color: #9aa3b0;
+        font: inherit;
+        font-size: 15px;
+        text-decoration: underline;
+        cursor: pointer;
+        touch-action: manipulation;
+    }
+
+    .sheet { max-height: 92vh; overflow: auto; }
+    .sheet .note { margin: 0; font-size: 13px; color: #9aa3b0; }
+    .out-img { width: 100%; height: auto; border-radius: 10px; display: block; }
+    a.primary {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        text-decoration: none;
+    }
+
+    .copy {
+        margin-top: 8px;
+        text-align: center;
+        font-size: 13px;
+        color: #7d8795;
+    }
+
+    button:focus-visible, input:focus-visible, a:focus-visible {
+        outline: 3px solid #8ab4ff;
+        outline-offset: 2px;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .pad-btn { transition: none; }
+    }
+</style>
+</head>
+
+<body>
+<main class="app">
+
+    <!-- Matchinfo -->
+    <section class="setup" aria-label="Matchinfo">
+        <div class="row">
+            <input type="text" id="match" placeholder="Match" aria-label="Match">
+            <button type="button" class="info-btn" id="bInfo" aria-expanded="false" aria-controls="info" aria-label="Förklaring av knapparna">i</button>
+        </div>
+
+        <div class="info" id="info" hidden>
+            <dl>
+                <div><dt>Räddning – håller kvar</dt><dd>Målvakten räddar och behåller bollen.</dd></div>
+                <div><dt>Räddning – ger retur</dt><dd>Målvakten räddar, men bollen studsar ut i spel igen.</dd></div>
+                <div><dt>Mål</dt><dd>Öppnar en ruta där du väljer var bollen gick in (lågt eller högt, vänster eller höger, sett från målvakten) och i vilken situation (skott utifrån, skott från sidan, bakom mål eller på retur). Tryck sedan Spara mål. Du kan också välja Registrera utan detaljer.</dd></div>
+                <div><dt>Räddning friläge</dt><dd>Tryck på den först, tryck sedan på håller kvar eller ger retur. Räddningen räknas både som vanlig räddning och som friläge.</dd></div>
+                <div><dt>Ångra</dt><dd>Tar bort den senaste registreringen, även ett mål.</dd></div>
+                <div><dt>Ny match</dt><dd>Nollställer allt och börjar en ny match.</dd></div>
+                <div><dt>P1 P2 P3 och min</dt><dd>Välj vilka perioder målvakten spelade. Minuterna räknas som 20 per period och går att skriva över.</dd></div>
+                <div><dt>Returkontroll</dt><dd>Andelen räddningar där målvakten höll kvar bollen.</dd></div>
+                <div><dt>Spara bild</dt><dd>Sparar statistikkortet som en bild, utan målinformationen.</dd></div>
+                <div><dt>Insläppta mål (längst ner)</dt><dd>Visar hur många mål som gick in på varje plats och i varje situation, samt en lista över varje mål. Den delen ingår inte i Spara bild.</dd></div>
+                <div><dt>Spara med detaljer</dt><dd>Sparar statistikkortet och målinformationen tillsammans i en bild.</dd></div>
+            </dl>
+        </div>
+
+        <div class="periods">
+            <button type="button" class="chip" data-p="0" aria-pressed="true">P1</button>
+            <button type="button" class="chip" data-p="1" aria-pressed="true">P2</button>
+            <button type="button" class="chip" data-p="2" aria-pressed="true">P3</button>
+            <label class="minutes">
+                <input type="number" id="minutes" inputmode="numeric" min="0" max="999" aria-label="Minuter spelade">
+                <span>min</span>
+            </label>
+        </div>
+    </section>
+
+    <!-- Statistikkort -->
+    <section class="card" id="captureArea" aria-label="Statistikkort">
+        <div class="head">
+            <div class="head-left">
+                <div class="who" id="cMatch">Match</div>
+                <div class="periods-text" id="cPeriods"></div>
+            </div>
+            <div class="date" id="cDate"></div>
+        </div>
+
+        <div class="grid">
+            <div class="tile">
+                <div class="t-label">Minuter</div>
+                <div class="t-value" id="cMin">60</div>
+            </div>
+            <div class="tile">
+                <div class="t-label">Skott</div>
+                <div class="t-value" id="cShots">0</div>
+            </div>
+            <div class="tile good">
+                <div class="t-label">Räddningar</div>
+                <div class="t-value"><span id="cSavePct">–</span><small id="cSaveN"></small></div>
+            </div>
+            <div class="tile two">
+                <div class="t-label">Mål</div>
+                <div class="t-value" id="cGoals">0</div>
+            </div>
+            <div class="tile good two">
+                <div class="t-label">Returkontroll</div>
+                <div class="t-value" id="cReb">–</div>
+            </div>
+            <div class="tile two">
+                <div class="t-label">Räddning friläge</div>
+                <div class="t-value" id="cFri">0</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Registrera -->
+    <section class="pad" aria-label="Registrera">
+        <button type="button" class="pad-btn keep" id="bKeep">
+            <span class="pad-top"><span class="pad-title">Räddning</span><span class="pad-count" id="nKeep">0</span></span>
+            <span class="pad-sub">håller kvar</span>
+        </button>
+        <button type="button" class="pad-btn rebound" id="bReb">
+            <span class="pad-top"><span class="pad-title">Räddning</span><span class="pad-count" id="nReb">0</span></span>
+            <span class="pad-sub">ger retur</span>
+        </button>
+        <button type="button" class="pad-btn goal" id="bGoal">
+            <span class="pad-top"><span class="pad-title">Mål</span><span class="pad-count" id="nGoal">0</span></span>
+            <span class="pad-sub">insläppt</span>
+        </button>
+        <button type="button" class="pad-btn fri" id="bFri" aria-pressed="false">
+            <span class="pad-top"><span class="pad-title">Räddning friläge</span><span class="pad-count" id="nFri">0</span></span>
+            <span class="pad-sub" id="friSub">tryck först</span>
+        </button>
+    </section>
+
+    <div class="tools">
+        <button type="button" class="sec" id="bUndo">Ångra</button>
+        <button type="button" class="sec" id="bNew">Ny match</button>
+    </div>
+
+    <button type="button" class="primary" id="bSave">Spara bild</button>
+    <button type="button" class="sec" id="bShare" hidden>Dela bild</button>
+
+    <p class="msg" role="status"></p>
+
+    <!-- Målinformation (ingår inte i Spara bild) -->
+    <section class="card details" id="detailArea" aria-label="Insläppta mål">
+        <div class="who">Insläppta mål <span class="sub" id="dCount"></span></div>
+
+        <p class="empty" id="dEmpty">Inga mål registrerade än.</p>
+
+        <div id="dBody" hidden>
+            <p class="sec-label">Var gick bollen in</p>
+            <div class="grid cols2">
+                <div class="tile"><div class="t-label">Högt vänster</div><div class="t-value" id="w-hv">0</div></div>
+                <div class="tile"><div class="t-label">Högt höger</div><div class="t-value" id="w-hh">0</div></div>
+                <div class="tile"><div class="t-label">Lågt vänster</div><div class="t-value" id="w-lv">0</div></div>
+                <div class="tile"><div class="t-label">Lågt höger</div><div class="t-value" id="w-lh">0</div></div>
+            </div>
+
+            <p class="sec-label">Situation</p>
+            <div class="grid cols2">
+                <div class="tile"><div class="t-label">Skott utifrån</div><div class="t-value" id="h-ut">0</div></div>
+                <div class="tile"><div class="t-label">Skott från sidan</div><div class="t-value" id="h-sida">0</div></div>
+                <div class="tile"><div class="t-label">Bakom mål</div><div class="t-value" id="h-bakom">0</div></div>
+                <div class="tile"><div class="t-label">På retur</div><div class="t-value" id="h-retur">0</div></div>
+            </div>
+
+            <p class="sec-label">Mål för mål</p>
+            <ol class="glist" id="gList"></ol>
+        </div>
+    </section>
+
+    <button type="button" class="primary" id="bSaveD" disabled>Spara med detaljer</button>
+    <button type="button" class="sec" id="bShareD" hidden>Dela med detaljer</button>
+
+    <p class="msg" role="status"></p>
+
+    <footer class="copy">&copy; sefreon</footer>
+</main>
+
+<!-- Målruta -->
+<dialog id="goalSheet" aria-labelledby="gsTitle">
+    <div class="sheet">
+        <h2 id="gsTitle">Mål</h2>
+
+        <h3>Var gick bollen in</h3>
+        <p class="hint">Vänster och höger sett från målvakten</p>
+        <div class="goal-grid" role="group" aria-label="Var gick bollen in">
+            <button type="button" class="opt" data-where="hv" aria-pressed="false">Högt vänster</button>
+            <button type="button" class="opt" data-where="hh" aria-pressed="false">Högt höger</button>
+            <button type="button" class="opt" data-where="lv" aria-pressed="false">Lågt vänster</button>
+            <button type="button" class="opt" data-where="lh" aria-pressed="false">Lågt höger</button>
+        </div>
+
+        <h3>Situation</h3>
+        <div class="how-grid" role="group" aria-label="Situation">
+            <button type="button" class="opt" data-how="ut" aria-pressed="false">Skott utifrån</button>
+            <button type="button" class="opt" data-how="sida" aria-pressed="false">Skott från sidan</button>
+            <button type="button" class="opt" data-how="bakom" aria-pressed="false">Bakom mål</button>
+            <button type="button" class="opt" data-how="retur" aria-pressed="false">På retur</button>
+        </div>
+
+        <div class="sheet-actions">
+            <button type="button" class="sec" id="gsCancel">Avbryt</button>
+            <button type="button" class="primary" id="gsSave" disabled>Spara mål</button>
+        </div>
+        <button type="button" class="link" id="gsSkip">Registrera utan detaljer</button>
+    </div>
+</dialog>
+
+<!-- Färdig bild -->
+<dialog id="imgDlg" aria-labelledby="idTitle">
+    <div class="sheet">
+        <h2 id="idTitle">Bilden är klar</h2>
+        <img id="imgOut" class="out-img" alt="Statistikbild">
+        <p class="note">Förhandsvisningen i Claude kan inte spara filer direkt. Öppna filen i Chrome så sparas bilden automatiskt. Du kan också hålla in fingret på bilden och välja att spara den.</p>
+        <div class="sheet-actions">
+            <button type="button" class="sec" id="idClose">Stäng</button>
+            <a class="primary" id="idDl" download="statistik.png" href="#">Ladda ner</a>
+        </div>
+    </div>
+</dialog>
+
+<!-- html2canvas -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+<script>
+const KEY = "malvakt-stats-v3";
+const LABELS = ["P1", "P2", "P3"];
+const WHERE = { hv: "Högt vänster", hh: "Högt höger", lv: "Lågt vänster", lh: "Lågt höger" };
+const HOW = { ut: "Skott utifrån", sida: "Skott från sidan", bakom: "Bakom mål", retur: "På retur" };
+
+const $ = id => document.getElementById(id);
+
+function today() {
+    const d = new Date();
+    return d.getFullYear() + "-" +
+        String(d.getMonth() + 1).padStart(2, "0") + "-" +
+        String(d.getDate()).padStart(2, "0");
+}
+
+function formatDate(iso) {
+    const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso || "");
+    if (!m) return "";
+    const d = new Date(+m[1], +m[2] - 1, +m[3]);
+    return d.toLocaleDateString("sv-SE", { day: "numeric", month: "long", year: "numeric" });
+}
+
+function defaults() {
+    return {
+        events: [],            // {t: 'k' | 'r' | 'g', fri: bool, where?: string, how?: string}
+        periods: [true, true, true],
+        minutes: 60,
+        match: "",
+        armed: false
+    };
+}
+
+function load() {
+    const base = defaults();
+    try {
+        const raw = localStorage.getItem(KEY);
+        if (raw) return Object.assign(base, JSON.parse(raw));
+    } catch (e) { /* lagring är valfri */ }
+    return base;
+}
+
+function persist() {
+    try { localStorage.setItem(KEY, JSON.stringify(st)); } catch (e) { /* ignoreras */ }
+}
+
+let st = load();
+
+function counts() {
+    let keep = 0, reb = 0, goals = 0, fri = 0;
+    for (const e of st.events) {
+        if (e.t === "k") keep++;
+        else if (e.t === "r") reb++;
+        else goals++;
+        if (e.fri) fri++;
+    }
+    return { keep, reb, goals, fri, saves: keep + reb, shots: keep + reb + goals };
+}
+
+function pct(n, d) {
+    return d > 0 ? Math.round((n / d) * 100) + "%" : "–";
+}
+
+function renderDetails() {
+    const goals = st.events.filter(e => e.t === "g");
+    const wc = { hv: 0, hh: 0, lv: 0, lh: 0 };
+    const hc = { ut: 0, sida: 0, bakom: 0, retur: 0 };
+
+    goals.forEach(g => {
+        if (wc[g.where] !== undefined) wc[g.where]++;
+        if (hc[g.how] !== undefined) hc[g.how]++;
+    });
+
+    $("dCount").textContent = goals.length ? `(${goals.length})` : "";
+    $("dEmpty").hidden = goals.length > 0;
+    $("dBody").hidden = goals.length === 0;
+
+    Object.keys(wc).forEach(k => { $("w-" + k).textContent = wc[k]; });
+    Object.keys(hc).forEach(k => { $("h-" + k).textContent = hc[k]; });
+
+    const list = $("gList");
+    list.textContent = "";
+    goals.forEach((g, i) => {
+        const li = document.createElement("li");
+        const n = document.createElement("b");
+        n.textContent = (i + 1) + ".";
+        const txt = document.createElement("span");
+        txt.textContent = [WHERE[g.where], HOW[g.how]].filter(Boolean).join(" · ") || "Utan detaljer";
+        li.append(n, txt);
+        list.appendChild(li);
+    });
+
+    $("bSaveD").disabled = goals.length === 0;
+    $("bShareD").disabled = goals.length === 0;
+}
+
+function render() {
+    const c = counts();
+    const played = LABELS.filter((_, i) => st.periods[i]);
+
+    $("cMatch").textContent = st.match.trim() || "Match";
+    $("cPeriods").textContent = played.length ? `(${played.join(", ")} spelade)` : "";
+    $("cDate").textContent = formatDate(today());
+
+    $("cMin").textContent = st.minutes;
+    $("cShots").textContent = c.shots;
+    $("cSavePct").textContent = pct(c.saves, c.shots);
+    $("cSaveN").textContent = c.shots ? `(${c.saves})` : "";
+    $("cGoals").textContent = c.goals;
+    $("cReb").textContent = pct(c.keep, c.saves);
+    $("cFri").textContent = c.fri;
+
+    $("nKeep").textContent = c.keep;
+    $("nReb").textContent = c.reb;
+    $("nGoal").textContent = c.goals;
+    $("nFri").textContent = c.fri;
+
+    $("bFri").setAttribute("aria-pressed", st.armed ? "true" : "false");
+    $("friSub").textContent = st.armed ? "nu: håller kvar / ger retur" : "tryck först";
+    $("bUndo").disabled = st.events.length === 0;
+
+    document.querySelectorAll(".chip").forEach(chip => {
+        chip.setAttribute("aria-pressed", st.periods[+chip.dataset.p] ? "true" : "false");
+    });
+
+    renderDetails();
+}
+
+function syncInputs() {
+    $("match").value = st.match;
+    $("minutes").value = st.minutes;
+}
+
+function say(text) {
+    document.querySelectorAll(".msg").forEach(m => { m.textContent = text; });
+}
+
+function buzz() {
+    try { if (navigator.vibrate) navigator.vibrate(15); } catch (e) {}
+}
+
+function addSave(type) {
+    st.events.push({ t: type, fri: st.armed });
+    st.armed = false;
+    buzz();
+    say("");
+    persist();
+    render();
+}
+
+function addGoal(where, how) {
+    const g = { t: "g", fri: false };
+    if (where) g.where = where;
+    if (how) g.how = how;
+    st.events.push(g);
+    buzz();
+    say("");
+    persist();
+    render();
+}
+
+/* ---------- Händelser ---------- */
+$("bKeep").addEventListener("click", () => addSave("k"));
+$("bReb").addEventListener("click", () => addSave("r"));
+
+$("bFri").addEventListener("click", () => {
+    st.armed = !st.armed;
+    buzz();
+    persist();
+    render();
+});
+
+$("bUndo").addEventListener("click", () => {
+    if (!st.events.length) return;
+    st.events.pop();
+    persist();
+    render();
+});
+
+$("bNew").addEventListener("click", () => {
+    if (!confirm("Börja ny match? Räknarna nollställs.")) return;
+    st = defaults();
+    syncInputs();
+    persist();
+    render();
+    say("");
+});
+
+$("match").addEventListener("input", e => { st.match = e.target.value; persist(); render(); });
+
+$("bInfo").addEventListener("click", () => {
+    const open = $("info").hidden;
+    $("info").hidden = !open;
+    $("bInfo").setAttribute("aria-expanded", open ? "true" : "false");
+});
+
+document.querySelectorAll(".chip").forEach(chip => {
+    chip.addEventListener("click", () => {
+        const i = +chip.dataset.p;
+        st.periods[i] = !st.periods[i];
+        st.minutes = st.periods.filter(Boolean).length * 20;
+        $("minutes").value = st.minutes;
+        persist();
+        render();
+    });
+});
+
+$("minutes").addEventListener("input", e => {
+    const n = parseInt(e.target.value, 10);
+    st.minutes = Number.isFinite(n) ? Math.min(Math.max(n, 0), 999) : 0;
+    persist();
+    render();
+});
+
+/* ---------- Målruta ---------- */
+const sheet = $("goalSheet");
+let pend = { where: null, how: null };
+
+function paintSheet() {
+    sheet.querySelectorAll("[data-where]").forEach(b =>
+        b.setAttribute("aria-pressed", b.dataset.where === pend.where ? "true" : "false"));
+    sheet.querySelectorAll("[data-how]").forEach(b =>
+        b.setAttribute("aria-pressed", b.dataset.how === pend.how ? "true" : "false"));
+    $("gsSave").disabled = !(pend.where && pend.how);
+}
+
+function openSheet() {
+    pend = { where: null, how: null };
+    paintSheet();
+    if (typeof sheet.showModal === "function") sheet.showModal();
+    else sheet.setAttribute("open", "");
+}
+
+function closeSheet() {
+    if (typeof sheet.close === "function") sheet.close();
+    else sheet.removeAttribute("open");
+}
+
+$("bGoal").addEventListener("click", openSheet);
+
+sheet.querySelectorAll("[data-where]").forEach(b =>
+    b.addEventListener("click", () => { pend.where = b.dataset.where; buzz(); paintSheet(); }));
+sheet.querySelectorAll("[data-how]").forEach(b =>
+    b.addEventListener("click", () => { pend.how = b.dataset.how; buzz(); paintSheet(); }));
+
+$("gsSave").addEventListener("click", () => {
+    if (!(pend.where && pend.how)) return;
+    addGoal(pend.where, pend.how);
+    closeSheet();
+});
+$("gsSkip").addEventListener("click", () => { addGoal(null, null); closeSheet(); });
+$("gsCancel").addEventListener("click", closeSheet);
+sheet.addEventListener("click", e => { if (e.target === sheet) closeSheet(); });
+
+/* ---------- Bild ---------- */
+function fileName(withDetails) {
+    const match = st.match.trim() || "Match";
+    const now = new Date();
+    const time =
+        String(now.getHours()).padStart(2, "0") + "-" +
+        String(now.getMinutes()).padStart(2, "0");
+    const safe = s => s.replace(/[^a-z0-9åäö_-]/gi, "_");
+    return `${safe(match)}_${today()}_${time}${withDetails ? "_detaljer" : ""}.png`;
+}
+
+async function renderImage(withDetails) {
+    if (typeof html2canvas === "undefined") {
+        throw new Error("Bildfunktionen kunde inte laddas. Anslut till nätet och ladda om sidan.");
+    }
+
+    const targets = [$("captureArea")];
+    if (withDetails) targets.push($("detailArea"));
+
+    const canvases = [];
+    targets.forEach(el => el.classList.add("flat"));
+    try {
+        for (const el of targets) {
+            canvases.push(await html2canvas(el, {
+                scale: 1080 / el.offsetWidth,
+                backgroundColor: "#f3f4f6"
+            }));
+        }
+    } finally {
+        targets.forEach(el => el.classList.remove("flat"));
+    }
+
+    if (canvases.length === 1) return canvases[0];
+
+    const out = document.createElement("canvas");
+    out.width = Math.max(...canvases.map(c => c.width));
+    out.height = canvases.reduce((sum, c) => sum + c.height, 0);
+    const ctx = out.getContext("2d");
+    ctx.fillStyle = "#f3f4f6";
+    ctx.fillRect(0, 0, out.width, out.height);
+
+    let y = 0;
+    canvases.forEach(c => { ctx.drawImage(c, 0, y); y += c.height; });
+    return out;
+}
+
+const imgDlg = $("imgDlg");
+
+function inPreview() {
+    try { return window.self !== window.top; } catch (e) { return true; }
+}
+
+function triggerDownload(url, name) {
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = name;
+    a.style.display = "none";
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+}
+
+$("idClose").addEventListener("click", () => imgDlg.close());
+imgDlg.addEventListener("click", e => { if (e.target === imgDlg) imgDlg.close(); });
+
+async function saveImage(withDetails) {
+    try {
+        const canvas = await renderImage(withDetails);
+        const name = fileName(withDetails);
+
+        // Data-URL (inte blob), eftersom Claude-appens förhandsvisning inte kan hämta blob-länkar
+        const dataUrl = canvas.toDataURL("image/png");
+
+        const preview = inPreview();
+
+        // I Claudes förhandsvisning (iframe) går det inte att spara direkt,
+        // så där visas bilden som reservlösning. I vanlig webbläsare laddas den bara ner.
+        if (preview) {
+            $("imgOut").src = dataUrl;
+            $("idDl").href = dataUrl;
+            $("idDl").setAttribute("download", name);
+            if (typeof imgDlg.showModal === "function") imgDlg.showModal();
+            else imgDlg.setAttribute("open", "");
+        }
+
+        triggerDownload(dataUrl, name);
+        say(preview ? "Bilden är klar." : "Bilden sparades i dina nedladdningar.");
+    } catch (err) {
+        say(err.message || "Det gick inte att skapa bilden.");
+    }
+}
+
+async function shareImage(withDetails) {
+    try {
+        const canvas = await renderImage(withDetails);
+        const blob = await new Promise(res => canvas.toBlob(res, "image/png"));
+        const file = new File([blob], fileName(withDetails), { type: "image/png" });
+        await navigator.share({ files: [file] });
+    } catch (err) {
+        if (err && err.name !== "AbortError") {
+            say(err.message || "Det gick inte att dela bilden.");
+        }
+    }
+}
+
+$("bSave").addEventListener("click", () => saveImage(false));
+$("bSaveD").addEventListener("click", () => saveImage(true));
+$("bShare").addEventListener("click", () => shareImage(false));
+$("bShareD").addEventListener("click", () => shareImage(true));
+
+try {
+    const probe = new File([""], "a.png", { type: "image/png" });
+    if (navigator.canShare && navigator.canShare({ files: [probe] })) {
+        $("bShare").hidden = false;
+        $("bShareD").hidden = false;
+    }
+} catch (e) {}
+
+syncInputs();
+render();
+</script>
+
+</body>
+</html>
