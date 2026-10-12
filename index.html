@@ -4,6 +4,12 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="theme-color" content="#101216">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-512.png">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Målvakt">
 <title>Målvaktsstatistik</title>
 
 <style>
@@ -146,6 +152,7 @@
         margin-top: 12px;
     }
     .grid.cols2 { grid-template-columns: 1fr 1fr; margin-top: 8px; }
+    .grid.tight { margin-top: 8px; }
 
     .tile {
         background: #ffffff;
@@ -325,7 +332,7 @@
 
     .goal-grid {
         display: grid;
-        grid-template-columns: 1fr 1fr;
+        grid-template-columns: 1fr 1fr 1fr;
         gap: 8px;
         padding: 8px 8px 0;
         border: 3px solid #e9ecf0;
@@ -346,7 +353,7 @@
         cursor: pointer;
         touch-action: manipulation;
     }
-    .goal-grid .opt { margin-bottom: 8px; }
+    .goal-grid .opt { margin-bottom: 8px; font-size: 15px; padding: 6px 4px; }
     .opt[aria-pressed="true"] {
         background: #cf3f38;
         border-color: #cf3f38;
@@ -409,7 +416,7 @@
             <dl>
                 <div><dt>Räddning – håller kvar</dt><dd>Målvakten räddar och behåller bollen.</dd></div>
                 <div><dt>Räddning – ger retur</dt><dd>Målvakten räddar, men bollen studsar ut i spel igen.</dd></div>
-                <div><dt>Mål</dt><dd>Öppnar en ruta där du väljer var bollen gick in (lågt eller högt, vänster eller höger, sett från målvakten) och i vilken situation (skott utifrån, skott från sidan, bakom mål eller på retur). Tryck sedan Spara mål. Du kan också välja Registrera utan detaljer.</dd></div>
+                <div><dt>Mål</dt><dd>Öppnar en ruta där du väljer var bollen gick in (högt eller lågt, vänster eller höger sett från målvakten, över huvud eller mellan benen) och i vilken situation (skott utifrån, skott från sidan, bakom mål eller på retur). Tryck sedan Spara mål. Du kan också välja Registrera utan detaljer.</dd></div>
                 <div><dt>Räddning friläge</dt><dd>Tryck på den först, tryck sedan på håller kvar eller ger retur. Räddningen räknas både som vanlig räddning och som friläge.</dd></div>
                 <div><dt>Ångra</dt><dd>Tar bort den senaste registreringen, även ett mål.</dd></div>
                 <div><dt>Ny match</dt><dd>Nollställer allt och börjar en ny match.</dd></div>
@@ -508,10 +515,12 @@
 
         <div id="dBody" hidden>
             <p class="sec-label">Var gick bollen in</p>
-            <div class="grid cols2">
+            <div class="grid tight">
                 <div class="tile"><div class="t-label">Högt vänster</div><div class="t-value" id="w-hv">0</div></div>
+                <div class="tile"><div class="t-label">Över huvud</div><div class="t-value" id="w-oh">0</div></div>
                 <div class="tile"><div class="t-label">Högt höger</div><div class="t-value" id="w-hh">0</div></div>
                 <div class="tile"><div class="t-label">Lågt vänster</div><div class="t-value" id="w-lv">0</div></div>
+                <div class="tile"><div class="t-label">Mellan benen</div><div class="t-value" id="w-mb">0</div></div>
                 <div class="tile"><div class="t-label">Lågt höger</div><div class="t-value" id="w-lh">0</div></div>
             </div>
 
@@ -545,8 +554,10 @@
         <p class="hint">Vänster och höger sett från målvakten</p>
         <div class="goal-grid" role="group" aria-label="Var gick bollen in">
             <button type="button" class="opt" data-where="hv" aria-pressed="false">Högt vänster</button>
+            <button type="button" class="opt" data-where="oh" aria-pressed="false">Över huvud</button>
             <button type="button" class="opt" data-where="hh" aria-pressed="false">Högt höger</button>
             <button type="button" class="opt" data-where="lv" aria-pressed="false">Lågt vänster</button>
+            <button type="button" class="opt" data-where="mb" aria-pressed="false">Mellan benen</button>
             <button type="button" class="opt" data-where="lh" aria-pressed="false">Lågt höger</button>
         </div>
 
@@ -585,7 +596,7 @@
 <script>
 const KEY = "malvakt-stats-v3";
 const LABELS = ["P1", "P2", "P3"];
-const WHERE = { hv: "Högt vänster", hh: "Högt höger", lv: "Lågt vänster", lh: "Lågt höger" };
+const WHERE = { hv: "Högt vänster", oh: "Över huvud", hh: "Högt höger", lv: "Lågt vänster", mb: "Mellan benen", lh: "Lågt höger" };
 const HOW = { ut: "Skott utifrån", sida: "Skott från sidan", bakom: "Bakom mål", retur: "På retur" };
 
 const $ = id => document.getElementById(id);
@@ -646,7 +657,7 @@ function pct(n, d) {
 
 function renderDetails() {
     const goals = st.events.filter(e => e.t === "g");
-    const wc = { hv: 0, hh: 0, lv: 0, lh: 0 };
+    const wc = { hv: 0, oh: 0, hh: 0, lv: 0, mb: 0, lh: 0 };
     const hc = { ut: 0, sida: 0, bakom: 0, retur: 0 };
 
     goals.forEach(g => {
@@ -955,6 +966,13 @@ try {
 
 syncInputs();
 render();
+
+// Gör appen installerbar och användbar offline (fungerar bara via en webbadress)
+if ("serviceWorker" in navigator && location.protocol.startsWith("http")) {
+    window.addEventListener("load", () => {
+        navigator.serviceWorker.register("sw.js").catch(() => {});
+    });
+}
 </script>
 
 </body>
