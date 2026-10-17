@@ -153,6 +153,7 @@
     }
     .grid.cols2 { grid-template-columns: 1fr 1fr; margin-top: 8px; }
     .grid.tight { margin-top: 8px; }
+    .grid.cols2 > .tile:last-child:nth-child(odd) { grid-column: 1 / -1; }
 
     .tile {
         background: #ffffff;
@@ -340,6 +341,7 @@
         border-radius: 10px 10px 0 0;
     }
     .how-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .how-grid .opt:last-child:nth-child(odd) { grid-column: 1 / -1; }
 
     .opt {
         min-height: 60px;
@@ -416,7 +418,7 @@
             <dl>
                 <div><dt>Räddning – håller kvar</dt><dd>Målvakten räddar och behåller bollen.</dd></div>
                 <div><dt>Räddning – ger retur</dt><dd>Målvakten räddar, men bollen studsar ut i spel igen.</dd></div>
-                <div><dt>Mål</dt><dd>Öppnar en ruta där du väljer var bollen gick in (högt eller lågt, vänster eller höger sett från målvakten, över huvud eller mellan benen) och i vilken situation (skott utifrån, skott från sidan, bakom mål eller på retur). Tryck sedan Spara mål. Du kan också välja Registrera utan detaljer.</dd></div>
+                <div><dt>Mål</dt><dd>Öppnar en ruta där du väljer var bollen gick in (högt eller lågt, vänster eller höger sett från målvakten, över huvud eller mellan benen) och i vilken situation (skott utifrån, skott från sidan, bakom mål, på retur eller friläge). Tryck sedan Spara mål. Du kan också välja Registrera utan detaljer.</dd></div>
                 <div><dt>Räddning friläge</dt><dd>Tryck på den först, tryck sedan på håller kvar eller ger retur. Räddningen räknas både som vanlig räddning och som friläge.</dd></div>
                 <div><dt>Ångra</dt><dd>Tar bort den senaste registreringen, även ett mål.</dd></div>
                 <div><dt>Ny match</dt><dd>Nollställer allt och börjar en ny match.</dd></div>
@@ -530,6 +532,7 @@
                 <div class="tile"><div class="t-label">Skott från sidan</div><div class="t-value" id="h-sida">0</div></div>
                 <div class="tile"><div class="t-label">Bakom mål</div><div class="t-value" id="h-bakom">0</div></div>
                 <div class="tile"><div class="t-label">På retur</div><div class="t-value" id="h-retur">0</div></div>
+                <div class="tile"><div class="t-label">Friläge</div><div class="t-value" id="h-fri">0</div></div>
             </div>
 
             <p class="sec-label">Mål för mål</p>
@@ -567,6 +570,7 @@
             <button type="button" class="opt" data-how="sida" aria-pressed="false">Skott från sidan</button>
             <button type="button" class="opt" data-how="bakom" aria-pressed="false">Bakom mål</button>
             <button type="button" class="opt" data-how="retur" aria-pressed="false">På retur</button>
+            <button type="button" class="opt" data-how="fri" aria-pressed="false">Friläge</button>
         </div>
 
         <div class="sheet-actions">
@@ -597,7 +601,7 @@
 const KEY = "malvakt-stats-v3";
 const LABELS = ["P1", "P2", "P3"];
 const WHERE = { hv: "Högt vänster", oh: "Över huvud", hh: "Högt höger", lv: "Lågt vänster", mb: "Mellan benen", lh: "Lågt höger" };
-const HOW = { ut: "Skott utifrån", sida: "Skott från sidan", bakom: "Bakom mål", retur: "På retur" };
+const HOW = { ut: "Skott utifrån", sida: "Skott från sidan", bakom: "Bakom mål", retur: "På retur", fri: "Friläge" };
 
 const $ = id => document.getElementById(id);
 
@@ -658,7 +662,7 @@ function pct(n, d) {
 function renderDetails() {
     const goals = st.events.filter(e => e.t === "g");
     const wc = { hv: 0, oh: 0, hh: 0, lv: 0, mb: 0, lh: 0 };
-    const hc = { ut: 0, sida: 0, bakom: 0, retur: 0 };
+    const hc = { ut: 0, sida: 0, bakom: 0, retur: 0, fri: 0 };
 
     goals.forEach(g => {
         if (wc[g.where] !== undefined) wc[g.where]++;
