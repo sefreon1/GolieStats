@@ -214,6 +214,9 @@
         gap: 10px;
     }
     .glist b { min-width: 1.6em; }
+    .g-where { font-weight: 600; }
+    .g-how { display: block; margin-top: 2px; font-size: 14px; color: #5d6572; }
+    .fine { margin: 8px 0 0; font-size: 12px; color: #5d6572; }
 
     /* ---------- Knappar under matchen ---------- */
     .pad { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
@@ -317,7 +320,8 @@
         background: #1b1f26;
         border-radius: 20px 20px 0 0;
         padding: 18px 14px 20px;
-        display: grid;
+        display: flex;
+        flex-direction: column;
         gap: 12px;
     }
     .sheet h2 { margin: 0; font-size: 20px; }
@@ -362,6 +366,17 @@
         color: #ffffff;
     }
 
+    .how-grid .opt { min-height: 52px; font-size: 15px; padding: 6px 8px; }
+
+    .sheet-foot {
+        position: sticky;
+        bottom: 0;
+        background: #1b1f26;
+        padding-top: 8px;
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+    }
     .sheet-actions { display: grid; grid-template-columns: 1fr 1.4fr; gap: 10px; }
 
     .link {
@@ -418,14 +433,14 @@
             <dl>
                 <div><dt>Räddning – håller kvar</dt><dd>Målvakten räddar och behåller bollen.</dd></div>
                 <div><dt>Räddning – ger retur</dt><dd>Målvakten räddar, men bollen studsar ut i spel igen.</dd></div>
-                <div><dt>Mål</dt><dd>Öppnar en ruta där du väljer var bollen gick in (högt eller lågt, vänster eller höger sett från målvakten, över huvud eller mellan benen) och i vilken situation (skott utifrån, skott från sidan, bakom mål, på retur eller friläge). Tryck sedan Spara mål. Du kan också välja Registrera utan detaljer.</dd></div>
+                <div><dt>Mål</dt><dd>Öppnar en ruta där du väljer var bollen gick in (högt eller lågt, vänster eller höger sett från målvakten, över huvud eller mellan benen) och i vilken situation. Du kan välja flera situationer för samma mål: skott utifrån, skott nära, skott från sidan, skott framifrån, bakom mål, på retur, friläge, straff och frislag. Tryck sedan Spara mål. Du kan också välja Registrera utan detaljer.</dd></div>
                 <div><dt>Räddning friläge</dt><dd>Tryck på den först, tryck sedan på håller kvar eller ger retur. Räddningen räknas både som vanlig räddning och som friläge.</dd></div>
                 <div><dt>Ångra</dt><dd>Tar bort den senaste registreringen, även ett mål.</dd></div>
                 <div><dt>Ny match</dt><dd>Nollställer allt och börjar en ny match.</dd></div>
                 <div><dt>P1 P2 P3 och min</dt><dd>Välj vilka perioder målvakten spelade. Minuterna räknas som 20 per period och går att skriva över.</dd></div>
                 <div><dt>Returkontroll</dt><dd>Andelen räddningar där målvakten höll kvar bollen.</dd></div>
                 <div><dt>Spara bild</dt><dd>Sparar statistikkortet som en bild, utan målinformationen.</dd></div>
-                <div><dt>Insläppta mål (längst ner)</dt><dd>Visar hur många mål som gick in på varje plats och i varje situation, samt en lista över varje mål. Den delen ingår inte i Spara bild.</dd></div>
+                <div><dt>Insläppta mål (längst ner)</dt><dd>Visar hur många mål som gick in på varje plats och i varje situation, samt en lista där varje mål är en rad med plats och alla valda situationer. Ett mål med flera situationer räknas i flera rutor. Den delen ingår inte i Spara bild.</dd></div>
                 <div><dt>Spara med detaljer</dt><dd>Sparar statistikkortet och målinformationen tillsammans i en bild.</dd></div>
             </dl>
         </div>
@@ -527,13 +542,18 @@
             </div>
 
             <p class="sec-label">Situation</p>
-            <div class="grid cols2">
-                <div class="tile"><div class="t-label">Skott utifrån</div><div class="t-value" id="h-ut">0</div></div>
-                <div class="tile"><div class="t-label">Skott från sidan</div><div class="t-value" id="h-sida">0</div></div>
-                <div class="tile"><div class="t-label">Bakom mål</div><div class="t-value" id="h-bakom">0</div></div>
-                <div class="tile"><div class="t-label">På retur</div><div class="t-value" id="h-retur">0</div></div>
-                <div class="tile"><div class="t-label">Friläge</div><div class="t-value" id="h-fri">0</div></div>
+            <div class="grid tight">
+                <div class="tile two"><div class="t-label">Skott utifrån</div><div class="t-value" id="h-ut">0</div></div>
+                <div class="tile two"><div class="t-label">Skott nära</div><div class="t-value" id="h-nara">0</div></div>
+                <div class="tile two"><div class="t-label">Skott från sidan</div><div class="t-value" id="h-sida">0</div></div>
+                <div class="tile two"><div class="t-label">Skott framifrån</div><div class="t-value" id="h-fram">0</div></div>
+                <div class="tile two"><div class="t-label">Bakom mål</div><div class="t-value" id="h-bakom">0</div></div>
+                <div class="tile two"><div class="t-label">På retur</div><div class="t-value" id="h-retur">0</div></div>
+                <div class="tile two"><div class="t-label">Friläge</div><div class="t-value" id="h-fri">0</div></div>
+                <div class="tile two"><div class="t-label">Straff</div><div class="t-value" id="h-straff">0</div></div>
+                <div class="tile two"><div class="t-label">Frislag</div><div class="t-value" id="h-frislag">0</div></div>
             </div>
+            <p class="fine">Ett mål kan ha flera situationer och räknas då i flera rutor.</p>
 
             <p class="sec-label">Mål för mål</p>
             <ol class="glist" id="gList"></ol>
@@ -565,19 +585,26 @@
         </div>
 
         <h3>Situation</h3>
-        <div class="how-grid" role="group" aria-label="Situation">
+        <p class="hint">Välj en eller flera</p>
+        <div class="how-grid" role="group" aria-label="Situation, välj en eller flera">
             <button type="button" class="opt" data-how="ut" aria-pressed="false">Skott utifrån</button>
+            <button type="button" class="opt" data-how="nara" aria-pressed="false">Skott nära</button>
             <button type="button" class="opt" data-how="sida" aria-pressed="false">Skott från sidan</button>
+            <button type="button" class="opt" data-how="fram" aria-pressed="false">Skott framifrån</button>
             <button type="button" class="opt" data-how="bakom" aria-pressed="false">Bakom mål</button>
             <button type="button" class="opt" data-how="retur" aria-pressed="false">På retur</button>
             <button type="button" class="opt" data-how="fri" aria-pressed="false">Friläge</button>
+            <button type="button" class="opt" data-how="straff" aria-pressed="false">Straff</button>
+            <button type="button" class="opt" data-how="frislag" aria-pressed="false">Frislag</button>
         </div>
 
-        <div class="sheet-actions">
-            <button type="button" class="sec" id="gsCancel">Avbryt</button>
-            <button type="button" class="primary" id="gsSave" disabled>Spara mål</button>
+        <div class="sheet-foot">
+            <div class="sheet-actions">
+                <button type="button" class="sec" id="gsCancel">Avbryt</button>
+                <button type="button" class="primary" id="gsSave" disabled>Spara mål</button>
+            </div>
+            <button type="button" class="link" id="gsSkip">Registrera utan detaljer</button>
         </div>
-        <button type="button" class="link" id="gsSkip">Registrera utan detaljer</button>
     </div>
 </dialog>
 
@@ -601,7 +628,16 @@
 const KEY = "malvakt-stats-v3";
 const LABELS = ["P1", "P2", "P3"];
 const WHERE = { hv: "Högt vänster", oh: "Över huvud", hh: "Högt höger", lv: "Lågt vänster", mb: "Mellan benen", lh: "Lågt höger" };
-const HOW = { ut: "Skott utifrån", sida: "Skott från sidan", bakom: "Bakom mål", retur: "På retur", fri: "Friläge" };
+const HOW = {
+    ut: "Skott utifrån", nara: "Skott nära", sida: "Skott från sidan", fram: "Skott framifrån",
+    bakom: "Bakom mål", retur: "På retur", fri: "Friläge", straff: "Straff", frislag: "Frislag"
+};
+
+// Ett mål kan ha flera situationer. Äldre mål kan ha en enda text, så båda former hanteras.
+function hows(g) {
+    if (Array.isArray(g.how)) return g.how;
+    return g.how ? [g.how] : [];
+}
 
 const $ = id => document.getElementById(id);
 
@@ -662,11 +698,11 @@ function pct(n, d) {
 function renderDetails() {
     const goals = st.events.filter(e => e.t === "g");
     const wc = { hv: 0, oh: 0, hh: 0, lv: 0, mb: 0, lh: 0 };
-    const hc = { ut: 0, sida: 0, bakom: 0, retur: 0, fri: 0 };
+    const hc = { ut: 0, nara: 0, sida: 0, fram: 0, bakom: 0, retur: 0, fri: 0, straff: 0, frislag: 0 };
 
     goals.forEach(g => {
         if (wc[g.where] !== undefined) wc[g.where]++;
-        if (hc[g.how] !== undefined) hc[g.how]++;
+        hows(g).forEach(k => { if (hc[k] !== undefined) hc[k]++; });
     });
 
     $("dCount").textContent = goals.length ? `(${goals.length})` : "";
@@ -682,9 +718,19 @@ function renderDetails() {
         const li = document.createElement("li");
         const n = document.createElement("b");
         n.textContent = (i + 1) + ".";
-        const txt = document.createElement("span");
-        txt.textContent = [WHERE[g.where], HOW[g.how]].filter(Boolean).join(" · ") || "Utan detaljer";
-        li.append(n, txt);
+        const box = document.createElement("div");
+        const where = document.createElement("span");
+        where.className = "g-where";
+        const list2 = hows(g).map(k => HOW[k]).filter(Boolean);
+        where.textContent = WHERE[g.where] || (list2.length ? "" : "Utan detaljer");
+        box.appendChild(where);
+        if (list2.length) {
+            const how = document.createElement("span");
+            how.className = "g-how";
+            how.textContent = list2.join(" · ");
+            box.appendChild(how);
+        }
+        li.append(n, box);
         list.appendChild(li);
     });
 
@@ -749,7 +795,7 @@ function addSave(type) {
 function addGoal(where, how) {
     const g = { t: "g", fri: false };
     if (where) g.where = where;
-    if (how) g.how = how;
+    if (how && how.length) g.how = how;
     st.events.push(g);
     buzz();
     say("");
@@ -812,19 +858,20 @@ $("minutes").addEventListener("input", e => {
 
 /* ---------- Målruta ---------- */
 const sheet = $("goalSheet");
-let pend = { where: null, how: null };
+let pend = { where: null, how: [] };
 
 function paintSheet() {
     sheet.querySelectorAll("[data-where]").forEach(b =>
         b.setAttribute("aria-pressed", b.dataset.where === pend.where ? "true" : "false"));
     sheet.querySelectorAll("[data-how]").forEach(b =>
-        b.setAttribute("aria-pressed", b.dataset.how === pend.how ? "true" : "false"));
-    $("gsSave").disabled = !(pend.where && pend.how);
+        b.setAttribute("aria-pressed", pend.how.includes(b.dataset.how) ? "true" : "false"));
+    $("gsSave").disabled = !(pend.where && pend.how.length);
 }
 
 function openSheet() {
-    pend = { where: null, how: null };
+    pend = { where: null, how: [] };
     paintSheet();
+    sheet.querySelector(".sheet").scrollTop = 0;
     if (typeof sheet.showModal === "function") sheet.showModal();
     else sheet.setAttribute("open", "");
 }
@@ -839,11 +886,16 @@ $("bGoal").addEventListener("click", openSheet);
 sheet.querySelectorAll("[data-where]").forEach(b =>
     b.addEventListener("click", () => { pend.where = b.dataset.where; buzz(); paintSheet(); }));
 sheet.querySelectorAll("[data-how]").forEach(b =>
-    b.addEventListener("click", () => { pend.how = b.dataset.how; buzz(); paintSheet(); }));
+    b.addEventListener("click", () => {
+        const k = b.dataset.how;
+        pend.how = pend.how.includes(k) ? pend.how.filter(x => x !== k) : pend.how.concat(k);
+        buzz();
+        paintSheet();
+    }));
 
 $("gsSave").addEventListener("click", () => {
-    if (!(pend.where && pend.how)) return;
-    addGoal(pend.where, pend.how);
+    if (!(pend.where && pend.how.length)) return;
+    addGoal(pend.where, Object.keys(HOW).filter(k => pend.how.includes(k)));
     closeSheet();
 });
 $("gsSkip").addEventListener("click", () => { addGoal(null, null); closeSheet(); });
