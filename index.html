@@ -154,6 +154,7 @@
     .head-left { flex: 1; min-width: 0; }
     .who { font-size: 20px; font-weight: 700; }
     .who .sub { font-size: 15px; font-weight: 500; color: #5d6572; }
+    .keeper { font-size: 16px; font-weight: 600; color: #14171c; margin-top: 2px; }
     .result { font-size: 16px; font-weight: 700; margin-top: 2px; }
     .periods-text { font-size: 15px; color: #5d6572; margin-top: 2px; }
     .date {
@@ -451,6 +452,7 @@
 
     <!-- Matchinfo -->
     <section class="setup" aria-label="Matchinfo">
+        <input type="text" id="keeper" placeholder="Målvakt (namn)" aria-label="Målvaktens namn">
         <div class="teams">
             <input type="text" id="home" placeholder="Hemmalag" aria-label="Hemmalag">
             <input type="text" id="away" placeholder="Bortalag" aria-label="Bortalag">
@@ -474,7 +476,7 @@
                 <div><dt>Räddning – ger retur</dt><dd>Målvakten räddar, men bollen studsar ut i spel igen.</dd></div>
                 <div><dt>Mål</dt><dd>Öppnar en ruta där du väljer var bollen gick in (högt eller lågt, vänster eller höger sett från målvakten, över huvud eller mellan benen) och i vilken situation. Du kan välja flera situationer för samma mål: skott utifrån, skott nära, skott från sidan, skott framifrån, bakom mål, på retur, friläge, straff och frislag. Tryck sedan Spara mål. Du kan också välja Registrera utan detaljer.</dd></div>
                 <div><dt>Räddning friläge</dt><dd>Tryck på den först, tryck sedan på håller kvar eller ger retur. Räddningen räknas både som vanlig räddning och som friläge.</dd></div>
-                <div><dt>Hemmalag, Bortalag och slutresultat</dt><dd>Skriv lagen och slutresultatet överst. De visas på statistikkortet och används i bildens filnamn. Slutresultatet är valfritt.</dd></div>
+                <div><dt>Målvakt, Hemmalag, Bortalag och slutresultat</dt><dd>Skriv målvaktens namn, lagen och slutresultatet överst. De visas på statistikkortet och används i bildens filnamn. Slutresultatet är valfritt.</dd></div>
                 <div><dt>Mål i öppen bur</dt><dd>Används när målvakten är uttagen och motståndaren gör mål i tomt mål. Det räknas separat och påverkar inte målvaktens skott, mål, räddningar eller procent.</dd></div>
                 <div><dt>Ångra</dt><dd>Tar bort den senaste registreringen, även ett mål.</dd></div>
                 <div><dt>Ny match</dt><dd>Nollställer allt och börjar en ny match.</dd></div>
@@ -503,6 +505,7 @@
         <div class="head">
             <div class="head-left">
                 <div class="who" id="cMatch">Match</div>
+                <div class="keeper" id="cKeeper" hidden></div>
                 <div class="result" id="cResult" hidden></div>
                 <div class="periods-text" id="cPeriods"></div>
             </div>
@@ -721,7 +724,7 @@ function defaults() {
         periods: [true, true, true],
         minutes: 60,
         periodLen: 20,
-        match: "", home: "", away: "", homeScore: "", awayScore: "",
+        match: "", keeper: "", home: "", away: "", homeScore: "", awayScore: "",
         armed: false,
         wake: false
     };
@@ -806,13 +809,17 @@ function render() {
     const played = LABELS.filter((_, i) => st.periods[i]);
 
     $("cMatch").textContent = matchTitle();
+    const kp = (st.keeper || "").trim();
+    $("cKeeper").textContent = kp ? "Målvakt: " + kp : "";
+    $("cKeeper").hidden = !kp;
     const rt = resultText();
     $("cResult").textContent = rt;
     $("cResult").hidden = !rt;
     $("cOpen").textContent = c.openNet ? `Mål i öppen bur: ${c.openNet} (ingår inte i målvaktens statistik)` : "";
     $("cOpen").hidden = !c.openNet;
     $("nOpen").textContent = c.openNet;
-    $("cPeriods").textContent = played.length ? `(${played.join(", ")} spelade)` : "";
+    st.minutes = played.length * (Number(st.periodLen) || 0);
+    $("cPeriods").textContent = st.minutes ? `${st.minutes} minuter spelade` : "";
     $("cDate").textContent = formatDate(today());
 
     st.minutes = played.length * (Number(st.periodLen) || 0);
@@ -841,6 +848,7 @@ function render() {
 }
 
 function syncInputs() {
+    $("keeper").value = st.keeper || "";
     $("home").value = st.home || "";
     $("away").value = st.away || "";
     $("hs").value = st.homeScore ?? "";
@@ -905,6 +913,7 @@ $("bNew").addEventListener("click", () => {
     say("");
 });
 
+$("keeper").addEventListener("input", e => { st.keeper = e.target.value; persist(); render(); });
 $("home").addEventListener("input", e => { st.home = e.target.value; persist(); render(); });
 $("away").addEventListener("input", e => { st.away = e.target.value; persist(); render(); });
 $("hs").addEventListener("input", e => { st.homeScore = e.target.value; persist(); render(); });
@@ -994,7 +1003,8 @@ function fileName(withDetails) {
         String(now.getHours()).padStart(2, "0") + "-" +
         String(now.getMinutes()).padStart(2, "0");
     const safe = s => s.replace(/[^a-z0-9åäö_-]/gi, "_");
-    return `${safe(match)}_${today()}_${time}${withDetails ? "_detaljer" : ""}.png`;
+    const kp = (st.keeper || "").trim();
+    return `${safe(match)}${kp ? "_" + safe(kp) : ""}_${today()}_${time}${withDetails ? "_detaljer" : ""}.png`;
 }
 
 async function renderImage(withDetails) {
